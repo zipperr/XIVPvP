@@ -327,10 +327,8 @@ UINT SendData(char* location, char* data) {
     while ((n = recv(s, receiveStr, MAXBUF, 0)) > 0) {
         receiveStr[n] = '\0';
     }
-    ShellExecuteA(NULL, "open", "http://localhost:8000/WAIT", NULL, NULL, SW_SHOWDEFAULT);
     if (strstr(receiveStr, "OKAY")) {
         WSACleanup();
-        ShellExecuteA(NULL, "open", "http://localhost:8000/OKAY", NULL, NULL, SW_SHOWDEFAULT);
         sscanf(strstr(receiveStr, "OKAY"), "OKAY_%d", &id);
         return id;
     }
@@ -468,87 +466,6 @@ UINT ProcessBuffer(unsigned char* buf, UINT bufLen) {
 
                 if (msg.type != 0x0000) {
                     ShellExecuteA(NULL, "open", "http://localhost:8000/CaptureMsg", NULL, NULL, SW_SHOWDEFAULT);
-                    pthread_create(&pth, NULL, SealRock, (void*)SealRockArgs);
-                }
-
-                if (msg.type == 0x0001) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0001", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0002) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0002", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0003) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0003", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0004) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0004", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0005) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0005", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0006) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0006", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0007) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0007", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0008) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0008", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0009) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0009", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0010) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0010", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0011) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0011", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0012) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0012", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0013) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0013", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x014) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0014", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0015) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0015", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0016) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0016", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0017) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0017", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0018) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0018", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0019) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0019", NULL, NULL, SW_SHOWDEFAULT);
-                }
-
-                if (msg.type == 0x0020) {
-                    ShellExecuteA(NULL, "open", "http://localhost:8000/0x0020", NULL, NULL, SW_SHOWDEFAULT);
                 }
 
                 //printf("decoded message 0x%04x\n", msg.type);
@@ -618,7 +535,6 @@ static DWORD CaptureThread(LPVOID arg) {
     PWINDIVERT_TCPHDR tcpHeader;
     while (TRUE) {
         // XIVPvPを管理者実行してFFXIV.exeを起動、キャラクターセレクト画面までくるとここに入る
-        /* ShellExecuteA(NULL, "open", "http://localhost:8000/Pake", NULL, NULL, SW_SHOWDEFAULT); */
         lastPacket = (UINT)time(NULL);
         if (!WinDivertRecv(handle, packet, sizeof(packet), &addr, &packetLen)) {
             if (GetLastError() == 6) {
@@ -711,6 +627,7 @@ int main(int argc, char** argv) {
     }
     pthread_t tray;
     pthread_create(&tray, NULL, trayLoop, NULL);
+    // xivpvp.comが死んでいるのでバージョンチェックは飛ばす
     //checkVersion();
     while (TRUE) {
         if ((UINT)time(NULL) - lastPacket > 30) {
@@ -723,18 +640,16 @@ int main(int argc, char** argv) {
         }
         GetPid(&pid);
         if (pid != 0 && BuildCaptureRule(pid, rule, sizeof(rule)) != 0) {
-            /* char test[256]; */
-            /* sprintf(test, "%s %s\n", "http://localhost:8000/captureRule_", rule); */
-            /* ShellExecuteA(NULL, "open", test, NULL, NULL, SW_SHOWDEFAULT); */
             /* printf("PID: %d, capture rule: %s\n", pid, rule); */
             handle = WinDivertOpen(rule, WINDIVERT_LAYER_NETWORK, 0, WINDIVERT_FLAG_SNIFF);
             if (handle == INVALID_HANDLE_VALUE) {
                 MessageBox(NULL, "Failed to open capture device.\nMake sure you're running XIVPvP as an Administrator.", "Error", MB_ICONWARNING);
                 Exit();
             }
+            // めも CreateThread(パケットの取得) > ProcessBuffer(FFXIVのパケットの取得, コンテンツ毎の振り分け) > SealRock(コンテンツ情報の取得) > SendData(データ送信) の順で処理が進む pythonでデータを受け取る
             CreateThread(NULL, 1, (LPTHREAD_START_ROUTINE)CaptureThread, (LPVOID)handle, 0, NULL);
             status = 1;
         }
     }
-    sleep(100);
+    sleep(5);
 }
