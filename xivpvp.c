@@ -38,6 +38,8 @@ HWND InitInstance(HINSTANCE, int);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 HANDLE mutex;
 
+static char DEBUG_LOG_FILE_NAME[9] = "debug.log";
+
 unsigned char header[] = { 0x52, 0x52, 0xA0, 0x41, 0xFF, 0x5D, 0x46 };
 UINT lastPacket = 0;
 UINT status = 0;
@@ -69,6 +71,23 @@ struct SealRock {
 };
 struct SealRock* SealRockArgs = NULL;
 UINT players = 0;
+
+void outputLog(char output_message[256]) {
+	FILE *output_file;
+    time_t localTimeNow = time(NULL);
+    char dateTimeNow[256];
+    strftime(dateTimeNow, sizeof(dateTimeNow), "%Y/%m/%d %a %H:%M:%S", localtime(&localTimeNow));
+    char strOutputString[256] = "";
+    snprintf(strOutputString, 256, "%s%s%s\n",dateTimeNow ,": " ,output_message);
+    // エラー番号 DBG_LOG_1
+	output_file = fopen(DEBUG_LOG_FILE_NAME, "w" ); 
+	if (output_file == NULL ){
+        MessageBoxW(NULL, "ファイル生成時にエラーが発生しました。\nDBG_LOG=1", "知らんがな DBG_LOG=1", MB_ICONWARNING);
+		exit(1);
+	}
+		fputs(strOutputString, output_file);
+        fclose(output_file);
+}
 
 void checkVersion() {
     struct hostent* apiServer;
@@ -526,8 +545,8 @@ static DWORD CaptureThread(LPVOID arg) {
         }
         WinDivertHelperParsePacket(packet, packetLen, NULL, NULL, NULL, NULL, &tcpHeader, NULL, &payload, &payloadLen);
         if (tcpHeader->Psh == 1) {
-            // todo Pshが1になる条件は？
-            /* ShellExecuteA(NULL, "open", "http://localhost:8000/Psh1", NULL, NULL, SW_SHOWDEFAULT); */
+            outputLog("PakePsh1 Detected.");
+            sleep(5);
             if (bufferLen == 0) {
                 ProcessBuffer(payload, payloadLen);
             }
