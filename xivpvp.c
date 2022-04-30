@@ -411,7 +411,7 @@ UINT ProcessBuffer(unsigned char* buf, UINT bufLen) {
     if (bufLen < 500) {
         sprintf(DEBUG_MESSAGE, "ProcessBuffer->under 500 message>> %s",buf);
         debugLog("buffer Length under 500.");
-        debugLog(DEBUG_MESSAGE)
+        debugLog(DEBUG_MESSAGE);
         return 0;
     }
     unsigned char* tempData;
