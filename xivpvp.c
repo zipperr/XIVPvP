@@ -40,6 +40,8 @@ HANDLE mutex;
 
 static char DEBUG_LOG_FILE_NAME[9] = "debug.log";
 
+char DEBUG_MESSAGE[MAXBUF];
+
 unsigned char header[] = { 0x52, 0x52, 0xA0, 0x41, 0xFF, 0x5D, 0x46 };
 UINT lastPacket = 0;
 UINT status = 0;
@@ -72,15 +74,15 @@ struct SealRock {
 struct SealRock* SealRockArgs = NULL;
 UINT players = 0;
 
-void outputLog(char output_message[256]) {
+void debugLog(char output_message[MAXBUF]) {
 	FILE *output_file;
     time_t localTimeNow = time(NULL);
     char dateTimeNow[256];
     strftime(dateTimeNow, sizeof(dateTimeNow), "%Y/%m/%d %a %H:%M:%S", localtime(&localTimeNow));
-    char strOutputString[256] = "";
-    snprintf(strOutputString, 256, "%s%s%s\n",dateTimeNow ,": " ,output_message);
+    char strOutputString[MAXBUF] = "";
+    snprintf(strOutputString, MAXBUF, "%s%s%s\n",dateTimeNow ,": " ,output_message);
     // エラー番号 DBG_LOG_1
-	output_file = fopen(DEBUG_LOG_FILE_NAME, "w" ); 
+	output_file = fopen(DEBUG_LOG_FILE_NAME, "a" ); 
 	if (output_file == NULL ){
         MessageBoxW(NULL, "ファイル生成時にエラーが発生しました。\nDBG_LOG=1", "知らんがな DBG_LOG=1", MB_ICONWARNING);
 		exit(1);
@@ -407,6 +409,9 @@ int UncompressData(const unsigned char* abSrc, UINT nLenSrc, unsigned char* abDs
 UINT ProcessBuffer(unsigned char* buf, UINT bufLen) {
     // packets we're interested in are way larger
     if (bufLen < 500) {
+        sprintf(DEBUG_MESSAGE, "ProcessBuffer->under 500 message>> %s",buf);
+        debugLog("buffer Length under 500.");
+        debugLog(DEBUG_MESSAGE)
         return 0;
     }
     unsigned char* tempData;
@@ -417,6 +422,8 @@ UINT ProcessBuffer(unsigned char* buf, UINT bufLen) {
 
     pthread_t pth;
     //printf("\nbuffer length %d\n", bufLen);
+    sprintf(DEBUG_MESSAGE, "ProcessBuffer->buffer length %d",bufLen);
+    debugLog(DEBUG_MESSAGE);
     // search for header
     for (i = 0; i < bufLen - sizeof(header); i++) {
         found = 0;
@@ -428,6 +435,7 @@ UINT ProcessBuffer(unsigned char* buf, UINT bufLen) {
         }
         if (found == sizeof(header)) {
             // fragmented packet without enough length for a header
+            debugLog("fragmented packet without enough length for a header.");
             if (bufLen - i < FFXIVLen) {
                 //return bufLen-i;
                 return 0;
@@ -435,6 +443,7 @@ UINT ProcessBuffer(unsigned char* buf, UINT bufLen) {
             memcpy(&packet, buf + i, FFXIVLen);
             // large, fragmented packet
             if (packet.len > bufLen - i) {
+                debugLog("large, fragmented packet");
                 if (packet.len > MAXBUF) {
                     return 0;
                 }
@@ -446,6 +455,9 @@ UINT ProcessBuffer(unsigned char* buf, UINT bufLen) {
             dataLen = packet.len - FFXIVLen;
             packet.data = malloc(dataLen);
             memcpy(packet.data, buf + (i + FFXIVLen), dataLen);
+            debugLog("memcpy packet data.");
+            sprintf(DEBUG_MESSAGE, "packet data->%s",packet.data);
+            debugLog(DEBUG_MESSAGE);
             if (packet.compressed) {
                 tempData = malloc(MAXBUF);
                 dataLen = UncompressData(packet.data, dataLen, tempData, MAXBUF);
@@ -463,7 +475,8 @@ UINT ProcessBuffer(unsigned char* buf, UINT bufLen) {
             msgPos = packet.data;
             while (packet.count--) {
                 memcpy(&msg, msgPos, sizeof(struct FFXIV_msg));
-
+                sprintf(DEBUG_MESSAGE, "msg type on line:475->%p",msg.type);
+                debugLog(DEBUG_MESSAGE);
                 if (msg.type != 0x0000) {
                     ShellExecuteA(NULL, "open", "http://localhost:8000/CaptureMsg", NULL, NULL, SW_SHOWDEFAULT);
                 }
@@ -545,9 +558,10 @@ static DWORD CaptureThread(LPVOID arg) {
         }
         WinDivertHelperParsePacket(packet, packetLen, NULL, NULL, NULL, NULL, &tcpHeader, NULL, &payload, &payloadLen);
         if (tcpHeader->Psh == 1) {
-            outputLog("PakePsh1 Detected.");
+            debugLog("PakePsh1 Detected.");
             sleep(5);
             if (bufferLen == 0) {
+                debugLog("bufferLen == 0 on line:561");
                 ProcessBuffer(payload, payloadLen);
             }
             else {
