@@ -1,0 +1,3 @@
+[submodule "docker/python/git"]
+	path = docker/python/git
+	url = git@github.com:zipperr/XIVPvPbrowser.git

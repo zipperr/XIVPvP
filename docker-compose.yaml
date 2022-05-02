@@ -1,0 +1,8 @@
+version: "3"
+services:
+  python:
+    build: ./docker/python
+    ports:
+      - 8000:8000
+    volumes:
+      - ./docker/python/git:/git
